@@ -1,54 +1,42 @@
-import { geoApi, weatherApi } from "./services/api"
-import { City, Country, GeoRes, Item, Location } from "./model"
-import AsyncSelect from "./components/AsyncSelect/AsyncSelect"
-import { useState } from "react"
+import ApiService from "./services/api"
+import { useEffect, useMemo, useState } from "react"
+import CustomSelect from "./components/CustomSelect"
+import { Item, Location } from "./model"
 
 function App() {
-  const [country, setCountry] = useState("")
+  const [country, setCountry] = useState<Item<string> | null>(null)
+  const [countryId, setCountryId] = useState<string>()
+  const [city, setCity] = useState<Item<Location> | null>(null)
 
-  const onCountryChange = (countryId: string) => {
-    setCountry(countryId)
-  }
+  const apiService = useMemo(() => new ApiService(), [])
 
-  const getCountries = (namePrefix: string) =>
-    geoApi.get<GeoRes<Country>>("/countries", { params: { namePrefix } }).then(res => {
-      return {
-        options: res.data.data.map(country => {
-          return {
-            label: country.name,
-            value: country.wikiDataId,
-          } as Item<string>
-        }),
-      }
-    })
+  useEffect(() => {
+    if (country) {
+      setCountryId(country.value)
+      setCity(null)
+    }
+  }, [country])
 
-  const getCities = (countryIds: string, namePrefix: string) =>
-    geoApi.get<GeoRes<City>>("/cities", { params: { namePrefix, countryIds } }).then(res => {
-      return {
-        options: res.data.data.map(city => {
-          return {
-            label: city.city,
-            value: {
-              latitude: city.latitude,
-              longitude: city.longitude,
-            },
-          } as Item<Location>
-        }),
-      }
-    })
-
-  const getWeather = (lat: string, lon: string) =>
-    weatherApi.get("/weather", { params: { lat, lon } }).then(console.log).catch(console.error)
+  useEffect(() => {
+    if (city) {
+      apiService.getWeather(city.value.latitude, city.value.longitude).then(console.log)
+    }
+  }, [city, apiService])
 
   return (
     <>
       <div className="container m-auto">
-        <header className="p-2 flex gap-2">
-          <AsyncSelect onValueChange={onCountryChange} loadOptions={getCountries} />
-          <AsyncSelect useEffectDependencies={[country]} loadOptions={e => getCities(country, e)} />
+        <header className="p-2">
+          <CustomSelect value={country} onChange={setCountry} loadOptions={apiService.getCountries} />
+          <CustomSelect
+            value={city}
+            isDisabled={country === null}
+            cacheUniqs={[country]}
+            loadOptions={(search) => apiService.getCities(search, countryId)}
+            onChange={setCity}
+          />
         </header>
       </div>
-      <h1>{}</h1>
     </>
   )
 }

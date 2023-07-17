@@ -9,13 +9,13 @@ export interface GeoRes<T> {
 }
 
 export interface Country {
-  code: string
-  name: string
   wikiDataId: string
+  name: string
 }
 
 export interface City {
-  city: string
+  wikiDataId: string
+  name: string
   latitude: number
   longitude: number
 }
@@ -23,4 +23,24 @@ export interface City {
 export interface Location {
   latitude: number
   longitude: number
+}
+
+export interface Weather {
+  main: {
+    feels_like: number
+    humidity: number
+    pressure: number
+    temp: number
+    temp_max: number
+    temp_min: number
+  }
+
+  clouds: {
+    all: number
+  }
+
+  weather: {
+    icon: string
+    main: string
+  }[]
 }
